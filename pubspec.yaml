@@ -40,7 +40,7 @@ dependencies:
   video_player: ^2.5.5
   intl: ^0.18.0
   table_calendar: any
-
+  http: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

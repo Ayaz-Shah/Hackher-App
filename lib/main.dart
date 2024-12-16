@@ -9,6 +9,7 @@ import 'package:hackher/hostScreens/hostloginscreen.dart';
 import 'package:hackher/hostScreens/onBoardingScreens/hostonboardingscreenone.dart';
 import 'package:hackher/spalshscreen.dart';
 
+import 'hostScreens/HostRegisterScreen.dart';
 import 'hostScreens/hostAnimal&petsScreen.dart';
 import 'hostScreens/hostDashboardscreen.dart';
 
@@ -29,7 +30,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Color(0xff216d8a)),
         useMaterial3: true,
       ),
-      home: HostSymptomReliefScreen(),
+      home: HostRegisterScreen(),
     );
   }
 }

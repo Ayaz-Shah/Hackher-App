@@ -12,6 +12,8 @@ class CustomTextFormField extends StatefulWidget {
   final TextEditingController? controller;
   final TextStyle? labelStyle;
   final Color? labelColor;
+  final VoidCallback? onEditingComplete;
+  final String? Function(String?)? validator;
 
   const CustomTextFormField({
     Key? key,
@@ -25,6 +27,8 @@ class CustomTextFormField extends StatefulWidget {
     this.controller,
     this.labelStyle,
     this.labelColor,
+    this.onEditingComplete,
+    this.validator,
   }) : super(key: key);
 
   @override
@@ -48,6 +52,8 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         controller: widget.controller,
         keyboardType: widget.keyboardType,
         obscureText: _isObscured,
+        onEditingComplete: widget.onEditingComplete,
+        validator: widget.validator,
         decoration: InputDecoration(
           labelText: widget.label,
           labelStyle: widget.labelStyle ??
@@ -60,7 +66,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           prefixIcon: widget.prefixIcon != null
               ? Icon(
             widget.prefixIcon,
-            color: const Color(0xff222222),
+            color: const Color(0xff216D8A),
           )
               : null,
           suffixIcon: widget.isPassword
