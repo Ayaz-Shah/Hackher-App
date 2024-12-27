@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hackher/hostScreens/hostDashboardscreen.dart';
+import 'package:hackher/hostScreens/hostForgotScreen.dart';
 import 'package:hackher/hostScreens/widgets/hostCustomButtonwidgets.dart';
 import 'package:hackher/hostScreens/widgets/HostCustomTextFeildwidgets.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'HostRegisterScreen.dart'; // Import your model
+import 'package:shared_preferences/shared_preferences.dart';  // Import shared_preferences
 
 class HostLoginScreen extends StatefulWidget {
   const HostLoginScreen({super.key});
@@ -23,51 +26,86 @@ class _HostLoginScreenState extends State<HostLoginScreen> {
   final TextEditingController hostPasswordController = TextEditingController();
 
   // Hard-coded values for device_type and device_token
-  final String deviceType = "android";  // or "ios" depending on your app
+  final String deviceType = "android"; // or "ios" depending on your app
   final String deviceToken = "your-device-token-here";
 
+
+  // Function to get token from SharedPreferences
+  // Future<String?> getToken() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   return prefs.getString('auth_token');
+  // }
   // Function to handle login
+  Future<void> saveLoginState(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+    await prefs.setBool('isLoggedIn', true);
+    print('Login state and token saved.');
+  }
+
   Future<void> login() async {
     if (formKey.currentState!.validate()) {
-      // Prepare the data from text controllers
       final String email = hostEmailController.text;
       final String password = hostPasswordController.text;
 
-      // API URL
       final String apiUrl = 'https://hacker.devssh.xyz/host/v1/auth/login/';
 
       try {
-        // Send a POST request to the API
         final response = await http.post(
           Uri.parse(apiUrl),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'email': email,
             'password': password,
-            'device_type': deviceType,   // Adding hard-coded device type
-            'device_token': deviceToken, // Adding hard-coded device token
+            'device_type': deviceType,
+            'device_token': deviceToken,
           }),
         );
 
-        // Check if the response is successful
         if (response.statusCode == 200) {
-          // Successful login
           final data = json.decode(response.body);
-          // Handle the response here (e.g., navigate to the next screen)
-          print('Login successful: $data');
-          // Navigate to HostDashBoardScreen after successful login
+          await saveLoginState(data['token']);
+          Fluttertoast.showToast(
+            msg: "Login successful!",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            textColor: Colors.white,
+            backgroundColor: Color(0xff216D8A),
+          );
+
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => HostDashBoardScreen()),
                 (route) => false,
           );
         } else {
-          // If the server didn't return a 200 OK response
-          print('Login failed: ${response.body}');
+          final errorData = json.decode(response.body);
+          String errorMessage = "Unknown error";
+
+          if (errorData.containsKey('email')) {
+            errorMessage = "User does not exist. Please check the email.";
+          } else if (errorData.containsKey('password')) {
+            errorMessage = "Incorrect password. Please try again.";
+          } else if (errorData.containsKey('error')) {
+            errorMessage = errorData['error'];
+          }
+
+          Fluttertoast.showToast(
+            msg: errorMessage,
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            textColor: Colors.white,
+            backgroundColor: Colors.red,
+          );
         }
       } catch (e) {
-        // Handle any errors that might occur during the API call
-        print('Error: $e');
+        Fluttertoast.showToast(
+          msg: "An error occurred: $e",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          textColor: Colors.white,
+          backgroundColor: Colors.red,
+        );
       }
     }
   }
@@ -150,7 +188,8 @@ class _HostLoginScreenState extends State<HostLoginScreen> {
                               return 'Please enter your email';
                             }
                             // Regular expression to validate email format
-                            if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$").hasMatch(value)) {
+                            if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$")
+                                .hasMatch(value)) {
                               return 'Please enter a valid email';
                             }
                             return null;
@@ -188,7 +227,7 @@ class _HostLoginScreenState extends State<HostLoginScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => HostLoginScreen(),
+                                    builder: (context) => HostForggotScreen(),
                                   ),
                                 );
                               },
@@ -210,7 +249,7 @@ class _HostLoginScreenState extends State<HostLoginScreen> {
                           height: 50,
                           child: CustomElevatedButton(
                             label: "Login",
-                            onPressed: () {
+                            onPressed: ()  {
                               login();
                             }, // Call the login function on press
                           ),
@@ -218,14 +257,10 @@ class _HostLoginScreenState extends State<HostLoginScreen> {
                         SizedBox(height: 30),
                         Text(
                           '-----------Or-----------',
-                          style: GoogleFonts.rubik(
-                            fontWeight: FontWeight.w300,
-                            letterSpacing: 0.5,
-                            fontSize: 16.0,
-                            color: Color(0xff222222),
-                          ),
+                          style: GoogleFonts.rubik(fontWeight: FontWeight.w300, fontSize: 16.0, color: Color(0xff222222)),
                         ),
                         SizedBox(height: 30),
+                        // Google Sign Up Button
                         Container(
                           width: double.infinity,
                           height: 54,
@@ -244,11 +279,7 @@ class _HostLoginScreenState extends State<HostLoginScreen> {
                                 SizedBox(width: 10),
                                 Text(
                                   'Google',
-                                  style: GoogleFonts.rubik(
-                                    fontWeight: FontWeight.w300,
-                                    fontSize: 16.0,
-                                    color: Color(0xff677294),
-                                  ),
+                                  style: GoogleFonts.rubik(fontWeight: FontWeight.w300, fontSize: 16.0, color: Color(0xff677294)),
                                 ),
                               ],
                             ),
@@ -259,26 +290,20 @@ class _HostLoginScreenState extends State<HostLoginScreen> {
                   ),
                 ),
                 SizedBox(height: 70),
+                // Login Navigation
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     InkWell(
                       onTap: () {
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => HostRegisterScreen(),
-                          ),
+                          MaterialPageRoute(builder: (context) => HostRegisterScreen()),
                         );
                       },
                       child: Text(
-                        "Don't have an account? Join us",
-                        style: GoogleFonts.rubik(
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 0.5,
-                          fontSize: 14.0,
-                          color: Color(0xff222222),
-                        ),
+                        "have an account? Join us",
+                        style: GoogleFonts.rubik(fontWeight: FontWeight.w400, letterSpacing: 0.5, fontSize: 14.0, color: Color(0xff222222)),
                       ),
                     ),
                   ],

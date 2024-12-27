@@ -41,6 +41,9 @@ dependencies:
   intl: ^0.18.0
   table_calendar: any
   http: any
+  fluttertoast: ^8.0.9
+  shared_preferences: ^2.3.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -71,6 +74,7 @@ flutter:
     - assets/assets/hostonboarding-image/
     - assets/assets/icons/
     - assets/assets/host_icons/interests/
+    - assets/assets/guest_icons/
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

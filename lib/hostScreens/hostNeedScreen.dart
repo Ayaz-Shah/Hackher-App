@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-import 'widgets/custonNeedbuttonwidgets.dart';
-import 'widgets/hostCustomButtonwidgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'widgets/custonNeedbuttonwidgets.dart'; // Make sure this widget is properly imported
+import 'widgets/hostCustomButtonwidgets.dart'; // Make sure this widget is properly imported
 
 class HostNeedsScreen extends StatefulWidget {
   @override
@@ -10,209 +12,320 @@ class HostNeedsScreen extends StatefulWidget {
 }
 
 class _HostNeedsScreenState extends State<HostNeedsScreen> {
-  final TextEditingController otherController = TextEditingController();
-  double _sliderValue = 0.5;
-  List<Map<String, dynamic>> userNeeds = [
-    {"label": "Space", "isSelected": false},
-    {"label": "Quiet", "isSelected": false},
-    {"label": "Hugs", "isSelected": false},
-    {"label": "Attention and doting", "isSelected": false},
-    {"label": "Quality time", "isSelected": false},
-    {"label": "Help with a task", "isSelected": false},
-    {"label": "Domestic work help", "isSelected": false},
-    {"label": "a break from kids", "isSelected": false},
-    {"label": "To plan & Dream", "isSelected": false},
-    {"label": "To cry", "isSelected": false},
-    {"label": "To laugh", "isSelected": false},
-    {"label": "Adventure", "isSelected": false},
-    {"label": "A date night", "isSelected": false},
-    {"label": "Quiet company", "isSelected": false},
-    {"label": "Quiet company", "isSelected": false},
-    {"label": "non-sexual touch", "isSelected": false},
-    {"label": "a massage", "isSelected": false},
-    {"label": "a listening ear", "isSelected": false},
-    {"label": "Need Sexual affection", "isSelected": false},
-    {"label": "Need penetrative sex", "isSelected": false},
-    {"label": "Need oral sex", "isSelected": false},
-    {"label": "Want no sex", "isSelected": false},
-    {"label": "Want mutual masturbation", "isSelected": false},
-  ];
+  double _sliderPosition = 0.5;
+  String _sliderValue = "Neutral"; // Stores selected item IDs
+  List<Map<String, dynamic>> currentNeeds =
+      []; // To store the options from the first API
+  List<Map<String, dynamic>> selectedNeeds = []; // To store selected needs
+  List<Map<String, dynamic>> hostCurrentNeeds =
+      []; // To store options from the new API
 
-  List<String> userNeedsselectedItems = [];
+  // Function to get token from SharedPreferences
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
+  }
 
-  void _toggleUserNeedsSelection(int index) {
-    setState(() {
-      userNeeds[index]['isSelected'] = !userNeeds[index]['isSelected'];
-      if (userNeeds[index]['isSelected']) {
-        userNeedsselectedItems.add(userNeeds[index]['label']);
+  // Fetch needs from the first API (current needs)
+  Future<void> fetchCurrentNeeds() async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        print('No token found. User might not be logged in.');
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse('https://hacker.devssh.xyz/host/v1/about/current_needs/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        print("Fetched data from current needs API: $responseData");
+
+        if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('options')) {
+          final options = responseData['options'] as List;
+
+          setState(() {
+            currentNeeds = options
+                .map((item) => {
+                      'name': item['name'].toString(),
+                      'id': item['id'].toString(),
+                    })
+                .toList();
+          });
+
+          // Fetch data from the new API after current needs are fetched
+          fetchHostCurrentNeeds(token);
+        } else {
+          print('Unexpected response format: $responseData');
+        }
       } else {
-        userNeedsselectedItems.remove(userNeeds[index]['label']);
+        print(
+            'Failed to fetch current needs. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching current needs: $e');
+    }
+  }
+
+  // Fetch options from the new API (to check which ones are selected)
+  Future<void> fetchHostCurrentNeeds(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://hacker.devssh.xyz/host/v1/add_about/get_current_needs/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      // Print the raw response body for debugging
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+
+        if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('host_needs')) {
+          final options = responseData['host_needs'] as List;
+
+          setState(() {
+            // Add the fetched options to the options list
+            hostCurrentNeeds = options
+                .map((item) => {
+                      'name': item['name'].toString(),
+                      'id': item['id'].toString(),
+                    })
+                .toList();
+
+            // Mark the selected options based on their IDs
+            selectedNeeds = currentNeeds.where((need) {
+              return hostCurrentNeeds
+                  .any((newOption) => newOption['id'] == need['id']);
+            }).toList();
+          });
+        } else {
+          print('Unexpected response format: $responseData');
+        }
+      } else {
+        print(
+            'Failed to fetch options from new API. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching options from new API: $e');
+    }
+  }
+
+  // Toggling need selection
+  void toggleNeed(Map<String, dynamic> need) {
+    setState(() {
+      if (selectedNeeds.any((s) => s['id'] == need['id'])) {
+        selectedNeeds.removeWhere((s) => s['id'] == need['id']);
+      } else {
+        selectedNeeds.add(need);
       }
     });
   }
 
-  Widget _buildGriduserNeeds() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Wrap(
-          spacing: 10, // Horizontal spacing between buttons
-          runSpacing: 10, // Vertical spacing between lines
-          children: userNeeds.map((item) {
-            return CustomNeedButton(
-              label: item['label'],
-              isSelected: item['isSelected'],
-              onPressed: () => _toggleUserNeedsSelection(userNeeds.indexOf(item)),
-            );
-          }).toList(),
-        );
-      },
-    );
+  // Function to post selected needs with full data (id and name) to the API
+  Future<void> postCurrentNeeds() async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        print('No token found. User might not be logged in.');
+        return;
+      }
+
+      // Prepare the list of selected need IDs (as strings)
+      List<String> selectedNeedIds =
+          selectedNeeds.map((e) => e['id'].toString()).toList();
+
+      // Prepare request body in the correct format
+      final Map<String, dynamic> requestBody = {
+        'needs': selectedNeedIds, // Just the list of IDs as strings
+      };
+
+      final response = await http.post(
+        Uri.parse('https://hacker.devssh.xyz/host/v1/add_about/current_needs/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        print('Current needs successfully updated!');
+        print('Response: $responseData');
+      } else {
+        print(
+            'Failed to update current needs. Status code: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error posting current needs: $e');
+    }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    fetchCurrentNeeds(); // Fetch needs when the screen loads
+  }
+
+  // Build the needs grid with CustomNeedButton for toggles
+  Widget _buildCurrentNeedsList() {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: currentNeeds.map((need) {
+        return CustomNeedButton(
+          label: need['name'],
+          isSelected: selectedNeeds.any((s) => s['id'] == need['id']),
+          onPressed: () => toggleNeed(need),
+        );
+      }).toList(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xffFFFFFF),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () {},
-          icon: Icon(
-            Icons.arrow_back_ios,
-            size: 12,
-          ),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: Icon(Icons.arrow_back_ios, size: 12),
         ),
         title: Text(
-          'Relationship Types',
+          'What Are Your Current Needs?',
           style: GoogleFonts.inter(
-              fontSize: 15.25,
-              fontWeight: FontWeight.w400,
-              color: Color(0xff000000)),
+            fontSize: 15.25,
+            fontWeight: FontWeight.w400,
+            color: Colors.black,
+          ),
         ),
-        backgroundColor: Color(0xffFFFFFF),
+        backgroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(left:20,right: 20,bottom: 20),
+        padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildGriduserNeeds(),
-        SizedBox(height: 20,),
-                Padding(
-                  padding: const EdgeInsets.only(right: 25),
-                  child: TextFormField(
-                    controller: otherController,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: "Other",
-                      hintStyle: GoogleFonts.rubik(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w300,
-                        color: Color(0xff000000),
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Display the toggle buttons for current needs
+              if (currentNeeds.isNotEmpty) _buildCurrentNeedsList(),
+              SizedBox(height: 30),
+              Text(
+                'What is your sex drive today?',
+                style: GoogleFonts.inter(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 20),
+              Stack(
+                children: [
+                  // Gradient background track
+                  Container(
+                    height: 8, // Adjusted height for the track
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0xFFFF6B00), // Orange for active part
+                          Color(0xFF07AEF6), // Blue for inactive part
+                        ],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(7),
-                        borderSide: BorderSide(
-                          color: Colors.transparent,
-                          width: 0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(7),
-                        borderSide: BorderSide(
-                          color: Colors.transparent,
-                          width: 0,
-                        ),
-                      ),
-                      fillColor: Color(0xffF3F2F7),
-                      filled: true,
-                      contentPadding: EdgeInsets.only(bottom: 17, left: 10),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                    keyboardType: TextInputType.text,
                   ),
-                ),
-                SizedBox(height: 30),
-                Text(
-                  'What is your sex drive today?',
-                  style: GoogleFonts.inter(
-                    fontSize: 21,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xff000000),
-                  ),
-                ),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Slider(
-                      value: _sliderValue,
+                  // Transparent Slider for interaction
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 8,
+                      thumbColor: Colors.white,
+                      thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12),
+                      overlayColor: Color(0xFFFF6B00).withOpacity(0.3),
+                      overlayShape: RoundSliderOverlayShape(overlayRadius: 24),
+                      inactiveTrackColor: Colors.transparent,
+                      activeTrackColor: Colors.transparent,
+                    ),
+                    child: Slider(
+                      value: _sliderPosition,
                       min: 0.0,
                       max: 1.0,
-                      divisions: 10,
-                      label: (_sliderValue * 100).toStringAsFixed(0) + '%',
+                      divisions: 2,
                       onChanged: (double value) {
                         setState(() {
-                          _sliderValue = value;
+                          _sliderPosition = value;
+                          _sliderValue = value == 0.0
+                              ? "No"
+                              : value == 0.5
+                                  ? "Neutral"
+                                  : "Yes";
                         });
                       },
-                      activeColor: Colors.orange,
-                      inactiveColor: Colors.grey,
                     ),
-                    SizedBox(height: 10,),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'No',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xff09AFF5),
-                          ),
-                        ),
-                        Text(
-                          'Neutral',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xffFF0000),
-                          ),
-                        ),
-                        Text(
-                          'Yes',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xffFF0000),
-                          ),
-                        ),
-                      ],
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'No',
+                      style: GoogleFonts.rubik(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xff09AFF5),
+                      ),
                     ),
-                    Positioned(
-                      left: (_sliderValue * MediaQuery.of(context).size.width) - 15, // Adjust the left position based on slider value
-                      child: Image.asset(
-                        'assets/assets/icons/Fire.png', // Update with your asset path
-                        width: 30,
-                        height: 30,
+                    Text(
+                      'Neutral',
+                      style: GoogleFonts.rubik(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xffFF6B00),
+                      ),
+                    ),
+                    Text(
+                      'Yes!',
+                      style: GoogleFonts.rubik(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xff07AEF6),
                       ),
                     ),
                   ],
                 ),
-
-                SizedBox(height: 10,),
-                Container(
-                  height: 45,
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 40),
+              ),
+              SizedBox(height: 20),
+              Center(
+                child: Container(
+                  height: 48,
+                  width: 225,
                   child: CustomElevatedButton(
                     onPressed: () {
-                      // Handle form submission
+                      // Call the postCurrentNeeds function when the "Complete" button is pressed
+                      postCurrentNeeds();
                     },
                     label: "Complete",
                   ),
                 ),
-              ],
-        ),
+              ),
+            ]),
       ),
     );
   }

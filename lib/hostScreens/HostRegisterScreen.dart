@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hackher/hostScreens/widgets/HostCustomTextFeildwidgets.dart';
 import 'package:hackher/hostScreens/widgets/hostCustomButtonwidgets.dart';
@@ -64,18 +65,6 @@ class _HostRegisterScreenState extends State<HostRegisterScreen> {
           final responseBody = jsonDecode(response.body);
           final HostSignUpModel responseModel = HostSignUpModel.fromJson(responseBody);
 
-          // Show a success message on screen (Snackbar)
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Account created successfully!')),
-          );
-
-          // Log the message in the terminal
-          print('Account created successfully: ${responseModel.toJson()}');
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => HostLoginScreen()), // Navigate to Login screen
-          );
         } else {
           // If the server returns an error response
           final responseBody = jsonDecode(response.body);
@@ -92,6 +81,7 @@ class _HostRegisterScreenState extends State<HostRegisterScreen> {
       }
     }
   }
+
 
 
   @override
@@ -295,11 +285,21 @@ class _HostRegisterScreenState extends State<HostRegisterScreen> {
                             label: "Sign Up",
                             onPressed: () {
                               signUp();
-                              // Navigator.pushAndRemoveUntil(
-                              //   context,
-                              //   MaterialPageRoute(builder: (context) => HostLoginScreen()),
-                              //   (route) => false,
-                              // );
+                              Fluttertoast.showToast(
+                                msg: "Account registration successful!",
+                                toastLength: Toast.LENGTH_SHORT,
+                                gravity: ToastGravity.BOTTOM,
+                                textColor: Colors.white,
+                                backgroundColor: Color(0xff216D8A),
+                              );
+
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (context) => HostLoginScreen()),
+                                    (route) => false,
+                              );
+
+                              formKey.currentState?.reset();
                             },
                           ),
                         ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts
 
 class CustomTextFormField extends StatefulWidget {
-  final String label;
+  final String? label;
   final String? hintText;
   final IconData? prefixIcon;
   final IconData? suffixIcon;
@@ -14,10 +14,11 @@ class CustomTextFormField extends StatefulWidget {
   final Color? labelColor;
   final VoidCallback? onEditingComplete;
   final String? Function(String?)? validator;
+  final bool? enabled; // Added enabled parameter
 
   const CustomTextFormField({
     Key? key,
-    required this.label,
+    this.label,
     this.hintText,
     this.prefixIcon,
     this.suffixIcon,
@@ -29,6 +30,7 @@ class CustomTextFormField extends StatefulWidget {
     this.labelColor,
     this.onEditingComplete,
     this.validator,
+    this.enabled = true, // Default is true, meaning the text field is enabled
   }) : super(key: key);
 
   @override
@@ -54,6 +56,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         obscureText: _isObscured,
         onEditingComplete: widget.onEditingComplete,
         validator: widget.validator,
+        enabled: widget.enabled, // Use the enabled parameter
         decoration: InputDecoration(
           labelText: widget.label,
           labelStyle: widget.labelStyle ??
@@ -72,9 +75,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           suffixIcon: widget.isPassword
               ? IconButton(
             icon: Icon(
-              _isObscured
-                  ? Icons.visibility_off
-                  : Icons.visibility,
+              _isObscured ? Icons.visibility_off : Icons.visibility,
             ),
             onPressed: () {
               setState(() {

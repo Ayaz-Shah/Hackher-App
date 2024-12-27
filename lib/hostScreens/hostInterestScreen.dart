@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hackher/hostScreens/hostAnimal&petsScreen.dart';
 import 'package:hackher/hostScreens/widgets/hostCustomInterestButtonwidgets.dart';
 
 class HostInterestScreen extends StatefulWidget {
@@ -16,7 +17,9 @@ class _HostInterestScreenState extends State<HostInterestScreen> {
       backgroundColor: Color(0xffFFFFFF),
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pop(context);
+          },
           icon: Icon(
             Icons.arrow_back_ios,
             size: 16,
@@ -46,6 +49,7 @@ class _HostInterestScreenState extends State<HostInterestScreen> {
                 imageAsset: 'assets/assets/host_icons/interests/host-Animal-&-Pets.png', // Replace with actual image path
                 label: 'Animal & Pets',
                 onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=> HostAnimalAndPetsScreen()));
                   print('Animal & Pets button pressed!');
                 },
               ),

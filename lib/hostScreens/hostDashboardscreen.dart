@@ -1,8 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hackher/hostScreens/hostInterestScreen.dart';
+import 'package:hackher/hostScreens/hostNeedScreen.dart';
+import 'package:hackher/hostScreens/hostSexlifeScreen.dart';
+import 'package:hackher/hostScreens/hostSymptomReliefScreen.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-class HostDashBoardScreen extends StatelessWidget {
+import 'hostProfileScreen.dart';
+import 'hostSnackListScreen.dart';
+import 'hstWishlistScreen.dart';
+import 'widgets/hostCustomInterestButtonwidgets.dart';
+
+class HostDashBoardScreen extends StatefulWidget {
+  @override
+  _HostDashBoardScreenState createState() => _HostDashBoardScreenState();
+}
+
+class _HostDashBoardScreenState extends State<HostDashBoardScreen> {
+  DateTime _focusedDay = DateTime.now(); // Current focused day
+  DateTime? _selectedDay; // Selected day in the calendar
+
+  int _selectedIndex = 0; // For Bottom Navigation Bar
+
+  // Handle navigation bar tap
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    if (index == 1) { // If Profile tab is tapped
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => HostProfileScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19,14 +52,14 @@ class HostDashBoardScreen extends StatelessWidget {
                 children: [
                   Text(
                     "Today's Insights",
-                     textAlign: TextAlign.center,
+                    textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: Color(0xff090A0A),
                     ),
                   ),
-                  IconButton(onPressed: (){}, icon: Icon(Icons.add_alert)),
+                  IconButton(onPressed: () {}, icon: Icon(Icons.add_alert)),
                 ],
               ),
             ),
@@ -46,156 +79,179 @@ class HostDashBoardScreen extends StatelessWidget {
                 ],
               ),
             ),
-      SizedBox(height: 10,),
-      Container(
-        height: 100,
-        width:double.infinity,
-        color: Color(0xffFFE7F0),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: InkWell(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Color(0xffE7407D),
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Text(
-                    "Your Current Needs?",
-                    style: GoogleFonts.inter(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xffFFFFFF),
+            SizedBox(height: 10),
+            Container(
+              height: 100,
+              width: double.infinity,
+              color: Color(0xffFFE7F0),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: InkWell(
+                  onTap: (){
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HostNeedsScreen()),
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Color(0xffE7407D),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Text(
+                          "Your Current Needs?",
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xffFFFFFF),
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 20,
+                          color: Color(0xffFFFFFF),
+                        ),
+                      ],
                     ),
                   ),
-                  Icon(
-                    Icons.arrow_forward_ios, // Replace this with your desired icon
-                    size: 20, // Set the size of the icon
-                    color: Color(0xffFFFFFF), // Set the color of the icon
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            // Calendar Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TableCalendar(
+                firstDay: DateTime.utc(2020, 1, 1),
+                lastDay: DateTime.utc(2030, 12, 31),
+                focusedDay: _focusedDay,
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay; // Update focused day
+                  });
+                },
+                calendarStyle: CalendarStyle(
+                  todayDecoration: BoxDecoration(
+                    color: Colors.pinkAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: Colors.deepPurple,
+                    shape: BoxShape.circle,
+                  ),
+                  defaultTextStyle: TextStyle(color: Colors.black),
+                ),
+                headerStyle: HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                  titleTextStyle: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.pink,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            // GridView Section
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: GridView.count(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(), // Prevents GridView scrolling
+                crossAxisCount: 3, // 3 columns
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                children: [
+                  CustomImageButton(
+                    imageAsset: 'assets/assets/guest_icons/guest_Interests_icon.png',
+                    label: 'Interests',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => HostInterestScreen()),
+                      );
+                    },
+                  ),
+                  CustomImageButton(
+                    imageAsset: 'assets/assets/guest_icons/guest_sex_life_icon.png',
+                    label: 'Sex Life',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => HostSexLifeScreen()),
+                      );
+                    },
+                  ),
+                  CustomImageButton(
+                    imageAsset: 'assets/assets/guest_icons/guest_symptoms relief_icon.png',
+                    label: 'Symptoms Relief',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => HostSymptomReliefScreen()),
+                      );
+                    },
+                  ),
+                  CustomImageButton(
+                    imageAsset: 'assets/assets/guest_icons/guest_snack list_icon.png',
+                    label: 'Snack List',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => HostSnackListScreen()),
+                      );
+                    },
+                  ),
+                  CustomImageButton(
+                    imageAsset: 'assets/assets/guest_icons/guest_wishlist_icon.png',
+                    label: 'Wish List',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) =>HostWishListScreen() ),
+                      );
+                    },
+                  ),
+                  CustomImageButton(
+                    imageAsset: 'assets/assets/guest_icons/guest_special _days.png',
+                    label: 'Special Days',
+                    onTap: () {
+
+                    },
                   ),
                 ],
               ),
             ),
-          )
-        ),
-      ),
-
-      //       SizedBox(height: 8),
-      //       Text(
-      //         "It's Progesterone week!",
-      //         style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-      //       ),
-      //       SizedBox(height: 16),
-      //       ElevatedButton.icon(
-      //         onPressed: () {},
-      //         icon: Icon(Icons.arrow_forward_ios, color: Colors.white),
-      //         label: Text(
-      //           "Your Current Needs?",
-      //           style: TextStyle(
-      //               color: Colors.white,
-      //               fontSize: 16,
-      //               fontWeight: FontWeight.bold),
-      //         ),
-      //         style: ElevatedButton.styleFrom(
-      //           backgroundColor: Colors.pink,
-      //           shape: RoundedRectangleBorder(
-      //               borderRadius: BorderRadius.circular(10)),
-      //           padding: EdgeInsets.symmetric(vertical: 16),
-      //         ),
-      //       ),
-      //     ],
-      //   ),
-      // ),
-      //       // SizedBox(height: 24),
-            // Calendar Section
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            //   child: TableCalendar(
-            //     firstDay: DateTime.utc(2022, 1, 1),
-            //     lastDay: DateTime.utc(2030, 12, 31),
-            //     focusedDay: DateTime.now(),
-            //     calendarStyle: CalendarStyle(
-            //       todayDecoration: BoxDecoration(
-            //         color: Colors.pink,
-            //         shape: BoxShape.circle,
-            //       ),
-            //       selectedDecoration: BoxDecoration(
-            //         color: Colors.green,
-            //         shape: BoxShape.circle,
-            //       ),
-            //     ),
-            //     headerStyle: HeaderStyle(), // Hide the header
-            //   ),
-            // ),
-            // SizedBox(height: 16),
-            // Buttons Section
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            //   child: Row(
-            //     mainAxisAlignment: MainAxisAlignment.spaceAround,
-            //     children: [
-            //       _buildCategoryButton("Interests", Icons.star),
-            //       _buildCategoryButton("Sex Life", Icons.favorite),
-            //       _buildCategoryButton("Symptoms", Icons.local_hospital),
-            //     ],
-            //   ),
-            // ),
-            // SizedBox(height: 16),
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            //   child: Row(
-            //     mainAxisAlignment: MainAxisAlignment.spaceAround,
-            //     children: [
-            //       _buildCategoryButton("Snack List", Icons.food_bank),
-            //       _buildCategoryButton("Wishlist", Icons.card_giftcard),
-            //       _buildCategoryButton("Special Days", Icons.event),
-            //     ],
-            //   ),
-            // ),
+            SizedBox(height: 16),
           ],
         ),
+      ),
+      // Bottom Navigation Bar
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        backgroundColor: Color(0xFF2E6F8E),
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.black54,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined, size: 26, color: Colors.white),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline, size: 26, color: Colors.black),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }
 }
-//       bottomNavigationBar: BottomNavigationBar(
-//         items: const <BottomNavigationBarItem>[
-//           BottomNavigationBarItem(
-//             icon: Icon(Icons.home),
-//             label: 'Home',
-//           ),
-//           BottomNavigationBarItem(
-//             icon: Icon(Icons.person),
-//             label: 'Profile',
-//           ),
-//           BottomNavigationBarItem(
-//             icon: Icon(Icons.camera_alt),
-//             label: 'Camera',
-//           ),
-//         ],
-//         currentIndex: 0,
-//         selectedItemColor: Colors.pink,
-//         unselectedItemColor: Colors.grey,
-//       ),
-//     );
-//   }
-//
-//   Widget _buildCategoryButton(String label, IconData icon) {
-//     return Column(
-//       children: [
-//         Container(
-//           height: 60,
-//           width: 60,
-//           decoration: BoxDecoration(
-//             color: Colors.pink[50],
-//             shape: BoxShape.circle,
-//           ),
-//           child: Icon(icon, color: Colors.pink),
-//         ),
-//         SizedBox(height: 8),
-//         Text(
-//           label,
-//           style: TextStyle(fontSize: 12, color: Colors.black),
-//         ),
